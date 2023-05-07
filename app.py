@@ -4,7 +4,6 @@ import requests
 import os
 
 load_dotenv()
-print(os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
 
