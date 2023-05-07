@@ -1,5 +1,10 @@
 from flask import Flask, request, jsonify
+from dotenv import load_dotenv
 import requests
+import os
+
+load_dotenv()
+print(os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
 
@@ -11,7 +16,7 @@ def get_nearby_places():
 
     """
 
-    API_KEY = "AIzaSyDuZzGxZqFea9knHTxDpxkJQsdcxY0T2V0"
+    API_KEY = os.getenv("GOOGLE_API_KEY")
     URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
     payload = {
         "key": API_KEY,
