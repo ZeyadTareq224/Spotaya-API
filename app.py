@@ -24,6 +24,11 @@ def calculate_time_delta(from_time, to_time, activities_no):
     return str(time_diff)
 
 
+def constuct_location_link(lng, lat):
+    link = f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
+    return link
+
+
 @app.route("/nearby-places", methods=["GET"])
 def get_nearby_places():
     """
@@ -38,7 +43,7 @@ def get_nearby_places():
     response = []
 
     for place_type in places_types:
-        response_dict = {}
+        simple_place_data = {}
         payload = {
             "key": API_KEY,
             "location": f"{request.args.get('lng')}, {request.args.get('lat')}",
@@ -49,15 +54,16 @@ def get_nearby_places():
         if results.status_code == 200:
             places_data = results.json()["results"]
             random_place = get_random_item(places_data)
-
+            lat = random_place["geometry"]["location"]["lat"]
+            lng = random_place["geometry"]["location"]["lng"]
             simple_place_data = {
+                "activity_type": place_type,
                 "name": random_place["name"],
-                "location": random_place["geometry"]["location"],
+                "location": constuct_location_link(lng, lat),
                 "types": random_place["types"],
                 "activity_duration": calculate_time_delta(
                     from_time, to_time, len(places_types)
                 ),
             }
-            response_dict[place_type] = simple_place_data
-            response.append(response_dict)
+            response.append(simple_place_data)
     return jsonify(response)
