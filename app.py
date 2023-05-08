@@ -1,32 +1,30 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from dotenv import load_dotenv
 import requests
 import os
-import random
-from datetime import datetime
+
+from .utils import (
+    generate_photo,
+    get_random_item,
+    calculate_time_delta,
+    constuct_location_link,
+)
+
+UPLOAD_FOLDER = "media\\"
+ALLOWED_EXTENTIONS = set(["jpg", "png", "jpeg"])
 
 load_dotenv()
 
 app = Flask(__name__)
+app.debug = True
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
-def get_random_item(mylist):
-    return random.choice(mylist)
+@app.route("/media/uploads/<filename>")
+def uploaded_file(filename):
+    """Expose media files through out urls"""
 
-
-def calculate_time_delta(from_time, to_time, activities_no):
-    from_time_obj = datetime.strptime(from_time, "%H:%M:%S").time()
-    to_time_obj = datetime.strptime(to_time, "%H:%M:%S").time()
-    delta = datetime.combine(datetime.min, to_time_obj) - datetime.combine(
-        datetime.min, from_time_obj
-    )
-    time_diff = delta / activities_no
-    return str(time_diff)
-
-
-def constuct_location_link(lng, lat):
-    link = f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
-    return link
+    return send_file(app.config["UPLOAD_FOLDER"] + filename, mimetype="image/jpeg")
 
 
 @app.route("/nearby-places", methods=["GET"])
@@ -54,6 +52,12 @@ def get_nearby_places():
         if results.status_code == 200:
             places_data = results.json()["results"]
             random_place = get_random_item(places_data)
+            photo_url = None
+            if "photos" in random_place.keys():
+                photo_ref = random_place["photos"][0]["photo_reference"]
+                if generate_photo(photo_ref, random_place["place_id"]):
+                    photo_url = f"http://localhost:5000/media/uploads/{random_place['place_id']}.jpg"
+
             lat = random_place["geometry"]["location"]["lat"]
             lng = random_place["geometry"]["location"]["lng"]
             simple_place_data = {
@@ -64,6 +68,8 @@ def get_nearby_places():
                 "activity_duration": calculate_time_delta(
                     from_time, to_time, len(places_types)
                 ),
+                "photo": photo_url,
             }
+
             response.append(simple_place_data)
     return jsonify(response)
