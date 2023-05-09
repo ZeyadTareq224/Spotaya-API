@@ -44,11 +44,14 @@ def get_nearby_places():
         simple_place_data = {}
         payload = {
             "key": API_KEY,
-            "location": f"{request.args.get('lng')}, {request.args.get('lat')}",
-            "radius": "1000",
+            "location": f"{request.args.get('lat')}, {request.args.get('lng')}",
+            "radius": "3000",
             "type": place_type,
         }
         results = requests.get(URL, params=payload)
+        if results.json()["status"] == "ZERO_RESULTS":
+            return jsonify({"error": "No results found!"}), 404
+        print(payload)
         if results.status_code == 200:
             places_data = results.json()["results"]
             random_place = get_random_item(places_data)
